@@ -1,0 +1,19 @@
+{
+  "name": "pkp-addresses-extraction-script",
+  "version": "1.0.0",
+  "description": "A script for extracting PKP addresses from blockchain events.",
+  "main": "index.js",
+  "scripts": {
+    "start": "npm install && node index.js"
+  },
+  "dependencies": {
+    "dotenv": "^10.0.0",
+    "ethers": "^5.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/marco12369/PKP-addresses-extraction-script.git"
+  },
+  "author": "Marco",
+  "license": "MIT"
+}
