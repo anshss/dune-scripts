@@ -21,7 +21,9 @@ const networks = {
   habanero: '0x80182Ec46E3dD7Bb8fa4f89b48d303bD769465B2',
   manzano: '0x3c3ad2d238757Ea4AF87A8624c716B11455c1F9A',
   serrano: '0x8F75a53F65e31DD0D2e40d0827becAaE2299D111',
-  datil: '0xb2C52356C307Dd4e088a0589db47a4865a74392c'
+  datil_prod: '0x487A9D096BB4B7Ac1520Cb12370e31e677B175EA',
+  datil_dev: '0x02C4242F72d62c8fEF2b2DB088A35a9F4ec741C7',
+  datil_test: '0x6a0f439f064B7167A8Ea6B22AcC07ae5360ee0d1'
 };
 
 // ABI for the contract, including the PKPMinted event and getEthAddress function
