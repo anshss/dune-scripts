@@ -2,6 +2,11 @@
 require('dotenv').config();
 const { ethers } = require('ethers');
 const fs = require('fs');
+const { DuneClient, ColumnType, ContentType } = require('@duneanalytics/client-sdk');
+const { v4: uuidv4 } = require('uuid');
+
+// namespace or username of the Dune Account
+const dune_namespace = process.env.DUNE_NAMESPACE;
 
 // Define available blockchains with their respective RPC URLs and chain IDs
 const blockchains = {
@@ -89,6 +94,7 @@ async function main() {
     // Iterate over each selected network (contract)
     for (const network of networksToUse) {
       const contractAddress = networks[network];
+
       const contract = new ethers.Contract(contractAddress, contractABI, provider);
 
       // Determine the end block number, either from environment variable or the latest block
@@ -131,12 +137,74 @@ async function main() {
       }
     }
   }
+  
+  // Save all results on Dune Database
+  results = formatArray(results);
+  results = convertToNDJSON(results);
+  await pushToDune(results);
 
-  // Save all results to a single CSV file
-  const csv = results.map(row => `${row.blockchain},${row.network},${row.tokenId},${row.ethAddress}`).join('\n');
-  fs.writeFileSync('results.csv', 'Blockchain,Network,Token ID,ETH Address\n' + csv);
+  // // Save all results to a single CSV file
+  // const csv = results.map(row => `${row.blockchain},${row.network},${row.tokenId},${row.ethAddress}`).join('\n');
+  // fs.writeFileSync('results.csv', 'Blockchain,Network,Token ID,ETH Address\n' + csv);
+}
+
+function formatArray(dataArray) {
+  // Remove rows with empty values
+  const cleanedData = dataArray.filter(row => 
+    Object.values(row).every(value => value !== "" && value !== null && value !== undefined)
+  );
+
+  // Rename columns
+  const renamedData = cleanedData.map(row => ({
+    blockchain: row['blockchain'],
+    network: row['network'],
+    token_id: row['tokenId'],
+    eth_address: row['ethAddress']
+  }));
+
+  return renamedData;
+}
+
+function convertToNDJSON(data) {
+  return data.map(obj => JSON.stringify(obj)).join('\n');
+}
+
+function convertToCSV(data) {
+  return data.map(row => `${row.blockchain},${row.network},${row.token_id},${row.eth_address}`).join('\n')
+}
+
+async function pushToDune(_data) {
+  const schema = [
+    { "name": "blockchain", "type": ColumnType.Varchar },
+    { "name": "network", "type": ColumnType.Varchar },
+    { "name": "token_id", "type": ColumnType.Varchar },
+    { "name": "eth_address", "type": ColumnType.Varchar }
+  ];
+  
+  const client = new DuneClient(process.env.DUNE_API_KEY);
+  
+  let table_name = `t_${uuidv4()}`;
+  table_name = table_name.replace(/-/g, '_');
+  
+  const createTableRes = await client.table.create({
+    namespace: dune_namespace,
+    table_name: table_name,
+    schema: schema
+  });
+  
+  console.log("Table created:", createTableRes);
+  
+  console.log("data", _data);
+  const uploadDataRes = await client.table.insert({
+    namespace: dune_namespace,
+    table_name: table_name,
+    data: _data,
+    content_type: ContentType.NDJson, 
+  });
+
+  console.log("Data uploaded:", uploadDataRes);
 }
 
 main().catch(error => {
-    console.error("Unhandled error:", error);
+  console.error("Unhandled error:", error);
 });
